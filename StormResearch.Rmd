@@ -28,16 +28,13 @@ According to my analysis, the data shows... blah blah blah...
 
 ## Environment
 The session information for this analysis:
-```{}
-R version 3.3.2 (2016-10-31)
-Platform: x86_64-apple-darwin13.4.0 (64-bit)
-Running under: OS X El Capitan 10.11.6
+```{r versions, echo=TRUE}
+sessionInfo()
+packageVersion("knitr")
 ```
 
-**Please make sure that you change your working directory to a folder where you intend to download the data and run this analysis.**
-
 ## Data Processing
-First we setup the environment by including packages and importing the data.
+First we setup the environment.
 ```{r setup, echo=TRUE,cache=TRUE,message=FALSE,warning=FALSE}
 ## Check for required packages and install if necessary
 if (!require("ggplot2")) install.packages("ggplot2")
@@ -46,17 +43,31 @@ if (!require("dplyr")) install.packages("dplyr")
 library(dplyr)
 if (!require("lubridate")) install.packages("lubridate")
 library(lubridate)
+if (!require("knitr")) install.packages("knitr")
+library(knitr)
 
 ## Set global plotting theme for ggplot2
 theme_set(theme_bw())
+```
 
-## Save data URL
-storm_url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
-
+```{r download, echo=TRUE,cache=TRUE,message=FALSE}
+## Download and import the dataset
+stormURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+if(!file.exists("~/StormResearchData")) {dir.create("~/StormResearchData")}
+download.file(stormURL, destfile = "~/StormResearchData/stormdata.csv.bz2", method = "curl")
+storms <- read.csv("~/StormResearchData/stormdata.csv.bz2")
 ```
 
 
-
 ## Exploratory Data Analysis
+```{r preview, echo=TRUE}
+## Preview the data
+head(storms)
+str(storms)
+```
+
+```{r}
+
+```
 
 ## Results
