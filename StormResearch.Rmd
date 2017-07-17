@@ -23,26 +23,25 @@ National Climatic Data Center Storm Events [FAQ](https://d396qusza40orc.cloudfro
 The events in the database start in the year 1950 and end in November 2011. In the earlier years of the database there are generally fewer events recorded, most likely due to a lack of good records. More recent years should be considered more complete.
 
 ## Synopsis
-According to my analysis, the data shows... blah blah blah...
+According to my analysis, the data shows that tornadoes are the most harmful to human population health.
 
+\  
 
 ## Environment
-The session information for this analysis:
+This analysis was performed using RStudio on a Macbook Pro.
 ```{r versions, echo=TRUE}
 sessionInfo()
-packageVersion("knitr")
 ```
+\  
 
 ## Data Processing
-First we setup the environment.
+First we setup the environment and get the dataframe ready.
 ```{r setup, echo=TRUE,cache=TRUE,message=FALSE,warning=FALSE}
 ## Check for required packages and install if necessary
 if (!require("ggplot2")) install.packages("ggplot2")
 library(ggplot2)
 if (!require("dplyr")) install.packages("dplyr")
 library(dplyr)
-if (!require("lubridate")) install.packages("lubridate")
-library(lubridate)
 if (!require("knitr")) install.packages("knitr")
 library(knitr)
 
@@ -58,16 +57,72 @@ download.file(stormURL, destfile = "~/StormResearchData/stormdata.csv.bz2", meth
 storms <- read.csv("~/StormResearchData/stormdata.csv.bz2")
 ```
 
+\  
 
 ## Exploratory Data Analysis
-```{r preview, echo=TRUE}
+
+Now let's look around and play with the data.
+
+```{r preview, echo=TRUE, results=FALSE}
 ## Preview the data
-head(storms)
 str(storms)
+head(storms)
 ```
 
-```{r}
+\  
+
+#### Across the United States, which types of events are most harmful with respect to population health?
+
+For this question, we need to group by event type and summarize injuries and fatalities.
+
+```{r explore, echo=TRUE}
+mostharmful <- storms %>% select(EVTYPE, FATALITIES, INJURIES) %>% group_by(EVTYPE) + 
+        %>% summarize(FATALITIES = sum(FATALITIES), INJURIES = sum(INJURIES))
+
+# View Top 10 
+head(arrange(mostharmful,desc(FATALITIES)),10)
+head(arrange(mostharmful,desc(INJURIES)),10)
+```
+\  
+
+As can be seen by the output, tornadoes rank #1 in both injuries and fatalities. 
+
+\  
+
+#### Across the United States, which types of events have the greatest economic consequences?
+
+For this question, we need to group by event and summarize property damage and crop damage. 
+
+```{r explore2, echo=TRUE}
+## Select only the variables we are interested in
+ecodmg <- select(storms, EVTYPE, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP, REMARKS)
+
+## Remove observations with 0 damage
+ecodmg <- filter(ecodmg, PROPDMG != 0 | CROPDMG != 0)
+
+## Let's look at the multipliers
+unique(ecodmg$PROPDMGEXP)
+unique(ecodmg$CROPDMGEXP)
+```
+
+We know that H = 100, K = 1000, M = 1,000,000, B = 1,000,000,000, and ? = Unknown.
+However, we also have a dash, a plus sign, and some numbers from 0 to 8. 
+Since the documentation doesn't explain these codes, I will assume that numbers are
+10^n. 
+
+Let's dig deeper and explore the + and - signs...
+```{r explore3, echo=TRUE}
+ecodmg[ecodmg$PROPDMGEXP=="+" | ecodmg$PROPDMGEXP=="-",]$PROPDMG
+ecodmg[ecodmg$PROPDMGEXP=="+" | ecodmg$PROPDMGEXP=="-",]$REMARKS
+```
+The numbers seem small, but the remarks indicate heavy damage. Perhaps the + and - signs should carry more weight. 
+
+
+```{r explore4, echo=TRUE}
+ecodmg[ecodmg$PROPDMGEXP == "h",]$PROPDMGEXP = 100
 
 ```
+
+\  
 
 ## Results
