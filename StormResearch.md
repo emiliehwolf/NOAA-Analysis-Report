@@ -1,11 +1,6 @@
----
-title: "Tornadoes Hurt the Most People and Floods Hurt the Economy the Most"
-author: "Emilie Wolf"
-date: "July 16, 2017"
-output: 
-  html_document:
-    keep_md: true
----
+# Tornadoes Hurt the Most People and Floods Hurt the Economy the Most
+Emilie Wolf  
+July 16, 2017  
 ## Introduction
 
 Storms and other severe weather events can cause both public health and economic problems for communities and municipalities. Many severe events can result in fatalities, injuries, and property damage, and preventing such outcomes to the extent possible is a key concern.
@@ -36,14 +31,34 @@ The dataset from NOAA is mostly complete, but many of the elements are not stand
 
 ## Environment
 This analysis was performed using RStudio on a Macbook Pro.
-```{r versions, echo=TRUE}
+
+```r
 sessionInfo()
+```
+
+```
+## R version 3.3.2 (2016-10-31)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: OS X El Capitan 10.11.6
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## loaded via a namespace (and not attached):
+##  [1] backports_1.0.5 magrittr_1.5    rprojroot_1.2   tools_3.3.2    
+##  [5] htmltools_0.3.5 yaml_2.1.14     Rcpp_0.12.9     stringi_1.1.5  
+##  [9] rmarkdown_1.6   knitr_1.15.1    stringr_1.2.0   digest_0.6.11  
+## [13] evaluate_0.10
 ```
 \  
 
 ## Data Processing
 First we setup the environment and get the dataframe ready.
-```{r setup, echo=TRUE,message=FALSE,warning=FALSE}
+
+```r
 ## Check for required packages and install if necessary
 if (!require("ggplot2")) install.packages("ggplot2")
 library(ggplot2)
@@ -61,7 +76,8 @@ library(reshape2)
 theme_set(theme_bw())
 ```
 
-```{r download, echo=TRUE,cache=TRUE,message=FALSE}
+
+```r
 ## Download and import the dataset
 stormURL <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
 if(!file.exists("~/StormResearchData")) {dir.create("~/StormResearchData")}
@@ -69,7 +85,8 @@ download.file(stormURL, destfile = "~/StormResearchData/stormdata.csv.bz2", meth
 rawstorms <- read.csv("~/StormResearchData/stormdata.csv.bz2", stringsAsFactors = FALSE)
 ```
 
-```{r cleanup, echo=TRUE}
+
+```r
 ## Select only the variables we need for analysis
 storms <- select(rawstorms,BGN_DATE,EVTYPE,FATALITIES,INJURIES,PROPDMG,PROPDMGEXP,CROPDMG,CROPDMGEXP)
 ```
@@ -78,7 +95,8 @@ storms <- select(rawstorms,BGN_DATE,EVTYPE,FATALITIES,INJURIES,PROPDMG,PROPDMGEX
 \  
 
 The entered data is skewed before 1996, so let's toss out everything before then.
-```{r dates, echo=TRUE,cache=TRUE}
+
+```r
 storms$BGN_DATE <- mdy_hms(storms$BGN_DATE)
 storms <- filter(storms, BGN_DATE > "1995-12-31")
 ```
@@ -86,7 +104,8 @@ storms <- filter(storms, BGN_DATE > "1995-12-31")
 \  
 
 There are over 900 unique event types in this dataset, so let's clean and narrow it down to 48.
-```{r cleanup2, echo=TRUE}
+
+```r
 ## Change all event types to uppercase so they can be grouped together better
 storms$EVTYPE <- toupper(storms$EVTYPE)
 
@@ -117,21 +136,59 @@ Now let's look around and play with the data.
 
 For this question, we need to group by event type and summarize injuries and fatalities.
 
-```{r explore, echo=TRUE}
+
+```r
 mostharmful <- storms %>% select(EVTYPE_48, FATALITIES, INJURIES) %>% group_by(EVTYPE_48) %>% summarize(FATALITIES = sum(FATALITIES), INJURIES = sum(INJURIES))
 
 # View Top 5
 head(arrange(mostharmful,desc(FATALITIES)),5)
+```
+
+```
+## # A tibble: 5 × 3
+##        EVTYPE_48 FATALITIES INJURIES
+##            <chr>      <dbl>    <dbl>
+## 1 EXCESSIVE HEAT       1797     6393
+## 2        TORNADO       1511    20667
+## 3    FLASH FLOOD        889     1675
+## 4      LIGHTNING        652     4143
+## 5    RIP CURRENT        542      503
+```
+
+```r
 head(arrange(mostharmful,desc(INJURIES)),5)
+```
+
+```
+## # A tibble: 5 × 3
+##        EVTYPE_48 FATALITIES INJURIES
+##            <chr>      <dbl>    <dbl>
+## 1        TORNADO       1511    20667
+## 2          FLOOD        515     7798
+## 3 EXCESSIVE HEAT       1797     6393
+## 4      HIGH WIND        484     4727
+## 5      LIGHTNING        652     4143
 ```
 \  
 
 As can be seen by the output, tornadoes rank #1 in injuries and excessive heat ranks #1 in fatalities.
 Let's see what this data looks like combined.
 
-```{r combine, echo=TRUE}
+
+```r
 mostharmful$TOTAL <- mostharmful$FATALITIES + mostharmful$INJURIES
 head(arrange(mostharmful,desc(TOTAL)),5)
+```
+
+```
+## # A tibble: 5 × 4
+##        EVTYPE_48 FATALITIES INJURIES TOTAL
+##            <chr>      <dbl>    <dbl> <dbl>
+## 1        TORNADO       1511    20667 22178
+## 2          FLOOD        515     7798  8313
+## 3 EXCESSIVE HEAT       1797     6393  8190
+## 4      HIGH WIND        484     4727  5211
+## 5      LIGHTNING        652     4143  4795
 ```
 
 So, all in all, since 1996, tornadoes are the most harmful to human health.
@@ -142,7 +199,8 @@ So, all in all, since 1996, tornadoes are the most harmful to human health.
 
 For this question, we need to group by event and summarize property damage and crop damage. 
 
-```{r explore2, echo=TRUE}
+
+```r
 ## Remove observations with 0 damage
 ecodmg <- storms %>% select(-FATALITIES,-INJURIES,-BGN_DATE,-EVTYPE) %>% filter(PROPDMG != 0 | CROPDMG != 0)
 
@@ -151,14 +209,27 @@ ecodmg$PROPDMGEXP <- toupper(ecodmg$PROPDMGEXP)
 ecodmg$CROPDMGEXP <- toupper(ecodmg$CROPDMGEXP)
 ```
 
-```{r checkexp, echo=TRUE}
+
+```r
 ## Let's look at the multipliers
 unique(ecodmg$PROPDMGEXP)
+```
+
+```
+## [1] "K" "M" ""  "B"
+```
+
+```r
 unique(ecodmg$CROPDMGEXP)
 ```
 
+```
+## [1] "K" ""  "M" "B"
+```
+
 We know that "K = 1000, "M" = 1,000,000, "B" = 1,000,000,000, and "" = 1.
-```{r explore3, echo=TRUE}
+
+```r
 ecodmg[ecodmg$PROPDMGEXP == "K",]$PROPDMGEXP = "1000"
 ecodmg[ecodmg$PROPDMGEXP == "M",]$PROPDMGEXP = "1000000"
 ecodmg[ecodmg$PROPDMGEXP == "B",]$PROPDMGEXP = "1000000000"
@@ -171,7 +242,8 @@ ecodmg[ecodmg$CROPDMGEXP == "",]$CROPDMGEXP = "1"
 ```
 \  
 Now let's make new columns showing the actual economic damage
-```{r explore4, echo=TRUE}
+
+```r
 ## Change the mulipliers from string to numeric class
 ecodmg$PROPDMGEXP <- as.numeric(ecodmg$PROPDMGEXP)
 ecodmg$CROPDMGEXP <- as.numeric(ecodmg$CROPDMGEXP)
@@ -182,7 +254,8 @@ ecodmg$CROPTOTAL <- ecodmg$CROPDMG*ecodmg$CROPDMGEXP
 ```
 \  
 
-```{r explore5, echo=TRUE}
+
+```r
 ## Now we can finally group by event type and summarize
 ecodmg <- ecodmg %>% group_by(EVTYPE_48) %>% summarize(PROPTOTAL=sum(PROPTOTAL), CROPTOTAL=sum(CROPTOTAL))
 
@@ -193,6 +266,17 @@ ecodmg$TOTALDMG <- ecodmg$PROPTOTAL+ecodmg$CROPTOTAL
 head(arrange(ecodmg,desc(TOTALDMG)),5)
 ```
 
+```
+## # A tibble: 5 × 4
+##           EVTYPE_48    PROPTOTAL  CROPTOTAL     TOTALDMG
+##               <chr>        <dbl>      <dbl>        <dbl>
+## 1             FLOOD 144563771550 4975903400 149539674950
+## 2 HURRICANE/TYPHOON  69305840000 2607872800  71913712800
+## 3        STORM TIDE  47834874000     855000  47835729000
+## 4           TORNADO  24616945710  283425010  24900370720
+## 5              HAIL  14596013420 2476279450  17072292870
+```
+
 So, there we have it: floods cost the most in crop and property damages combined, about $150Billion since 1996.
 
 \  
@@ -200,7 +284,8 @@ So, there we have it: floods cost the most in crop and property damages combined
 
 ## Results
 Now we plot some visuals!
-```{r plot1, echo=TRUE}
+
+```r
 ## Subset just the top 10 weather events
 mostharmful <- head(arrange(mostharmful,desc(TOTAL)),10)
 
@@ -223,7 +308,10 @@ plot1 <- ggplot(mostharmful, aes(x = EVTYPE_48, y = value, fill = variable)) +
 plot1
 ```
 
-```{r plot2, echo=TRUE}
+![](StormResearch_files/figure-html/plot1-1.png)<!-- -->
+
+
+```r
 ## Subset the top 10 weather events
 ecodmg <- head(arrange(ecodmg,desc(TOTALDMG)),10)
 
@@ -245,8 +333,9 @@ plot2 <- ggplot(ecodmg, aes(x = EVTYPE_48, y = value, fill = variable)) +
         xlab("") + ylab("Total Damages in US Dollars") + labs(fill="") +
         scale_fill_discrete(labels = c("Property Damages", "Crop Damages"))
 plot2
-
 ```
+
+![](StormResearch_files/figure-html/plot2-1.png)<!-- -->
 
 \  
 
